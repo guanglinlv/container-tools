@@ -12,6 +12,6 @@ if [ ! -x $SRC_DIR/make.sh ]; then chmod a+x $SRC_DIR/make.sh ; fi
 $SRC_DIR/make.sh
 
 if [ -f $SRC_DIR/nsattach ]; then /bin/bash -c "\cp -f $SRC_DIR/nsattach $TARGET_DIR" ; fi
-if [ -f $SRC_DIR/ssh-container ]; then /bin/bash -c "\cp -f $SRC_DIR/ssh-container $TARGET_DIR" ; fi
+if [ -f $SRC_DIR/container-enter ]; then /bin/bash -c "\cp -f $SRC_DIR/container-enter $TARGET_DIR" ; fi
 
 
