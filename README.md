@@ -26,16 +26,14 @@ enter linux container like garden or docker.
 	- create a garden container
 	- create a docker container
 	
-- ssh-container
-	install ssh-container.
+- install container-enter
+	install container-enter in the container VM.
 	
 	```shell
-	tar zxf ssh-container.tgz
-	cd ssh-container.tgz
 	./install.sh /usr/bin
 	```
 	
-- login in
+- login container
 	
 	- login specify container on other VM
 	
