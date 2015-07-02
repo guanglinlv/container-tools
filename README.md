@@ -27,6 +27,7 @@ enter linux container like garden or docker.
 	- create a docker container
 	
 - install container-enter
+
 	install container-enter in the container VM.
 	
 	```shell
