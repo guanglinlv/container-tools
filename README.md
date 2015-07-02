@@ -40,13 +40,13 @@ enter linux container like garden or docker.
 	- login specify container on other VM
 	
 	```shell
-	ssh -t -i ~/.ssh/<VM-USER-PRIVATE-KEY> <VM-USER>@<VM-IP> LocalCommand=" ssh-container --type <CONTAINER-TYPE> --id <CONTAINER-ID> --user <CONTAINER-USER>"
+	ssh -t -i ~/.ssh/<VM-USER-PRIVATE-KEY> <VM-USER>@<VM-IP> LocalCommand=" container-enter --type <CONTAINER-TYPE> --id <CONTAINER-ID> --user <CONTAINER-USER>"
 	```
 	
 	- HELP
 	
 	```shell
-	ssh -t -i ~/.ssh/<VM-USER-PRIVATE-KEY> <VM-USER>@<VM-IP> LocalCommand=" ssh-container --help"
+	ssh -t -i ~/.ssh/<VM-USER-PRIVATE-KEY> <VM-USER>@<VM-IP> LocalCommand=" container-enter --help"
 	
 	Usage: /usr/bin/ssh-container OPTIONS
 	
@@ -60,6 +60,6 @@ enter linux container like garden or docker.
 	- login specify container on the same VM
 	
 	```shell
-	ssh-container --type <CONTAINER-TYPE> --id <CONTAINER-ID> --user <CONTAINER-USER>
+	container-enter --type <CONTAINER-TYPE> --id <CONTAINER-ID> --user <CONTAINER-USER>
 	```
 	
