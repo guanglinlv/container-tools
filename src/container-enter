@@ -52,20 +52,26 @@ if [ -f /bin/bash ]; then shell=/bin/bash ; fi
 C_ENVS=()
 C_ENV_IDX=0
 
+declare -a C_COMMANDS=()
+C_COMAND_IDX=0
+
+RUN_MODE="enter"
+
 function command_exists() {
   command -v "$@" > /dev/null 2>&1
 }
 
 function usage() {
 	(echo ""
-	echo "Usage: $0 OPTIONS"
+	echo "Usage: `basename $0` OPTIONS"
 	echo ""
-	echo -e "  -t,--type <container type>     the connecting container type,${BRed}only support garden and docker currently.${NC}"
-	echo "  -i,--id   <container id>       the connecting container id"
-	echo -e "  -u,--user [container user]     User to change to in the connecting container."
-	#echo -e "  -d,--dir  [path]               Working directory for the running process,${BRed}only support garden container$ currently.${NC}"
-	#echo  "  -e,--env  [KEY=VALUE]          Environment variables to set for the login shell,You can specify multiple --env arguments."
+	echo -e "  -t,--type <container type>         the connecting container type,${BRed}only support garden and docker currently.${NC}"
+	echo "  -i,--id   <container id>           the connecting container id."
+	echo -e "  -u,--user [container user]         User to change to in the connecting container."
+	#echo -e "  -d,--dir  [path]                   Working directory for the running process,${BRed}only support garden container$ currently.${NC}"
+	#echo  "  -e,--env  [KEY=VALUE]              Environment variables to set for the login shell,You can specify multiple --env arguments."
 	#echo -e "                                 ${BRed}only support garden container currently.${NC}"
+	echo "  -c,--command [\"execute command\"]   you can give some command that will run in specified container,You can specify multiple -c arguments."
 	echo ""
 	echo "  -h,--help   display this help and exit"
 	echo "")>&2
@@ -98,11 +104,12 @@ function connect_garden_container() {
 	if [ ! -S $garden_container_socket ]; then usage "$C_TYPE Container $C_ID is not running or exist!" ; fi
 	
 	EXEC="$garden_wsh --socket $garden_container_socket"
+	if [ $RUN_MODE == "command" ]; then EXEC="${EXEC} /bin/bash -c" ; return ; fi
 	if [ -n "$C_USER" ]; then EXEC="$EXEC --user $C_USER" ; fi
 	if [ -n "$C_DIR" ]; then EXEC="$EXEC --dir $C_DIR" ; fi
 	
 	local has_term_env=""
-	for it in ${C_ENVS[@]}; do
+	for it in "${C_ENVS[@]}"; do
 		#if [ $(echo "${it%%=*}"|tr [a-z] [A-Z]) == "TERM" ] ; then has_term_env="true" ; fi
 		if [ "$it" == "TERM" ] ; then has_term_env="true" ; fi
 		EXEC="$EXEC --env $it"
@@ -111,17 +118,18 @@ function connect_garden_container() {
 }
 
 function connect_docker_container() {
-	EXEC="$DOCKER_CMD exec -it $C_ID /bin/bash -c 'export TERM=$C_TERM;/bin/su - $C_USER'"
+	EXEC="$DOCKER_CMD exec -it $C_ID /bin/bash -c"
+	if [ $RUN_MODE == "enter" ]; then EXEC="${EXEC} 'export TERM=$C_TERM;/bin/su - $C_USER'" ; else return ; fi
 	#if [ -n "$C_USER" ]; then echo -e "${BRed}Warning!!! Docker container doesn't support specify user ${NC}" ; C_USER="" ; fi
 	if [ -n "$C_DIR" ]; then echo -e "${BRed}Warning!!! Docker container doesn't support specify directory ${NC}" ; fi
 	if [ ${#C_ENVS[@]} -gt 0 ] ; then 
 		echo -e "${BRed}Warning!!! Docker container doesn't support specify environment ${NC}"
-		for it in ${C_ENVS[@]}; do echo -e "${BRed}           Ignore specify environment '$it' ${NC}" ; done
+		for it in "${C_ENVS[@]}"; do echo -e "${BRed}           Ignore specify environment '$it' ${NC}" ; done
 	fi
 }
 
 function garden_container() {
-	if [ -z "$C_ID" ]; then usage "You must specify containet id that you want to connect!" ; fi
+	if [ -z "$C_ID" ]; then usage "You must specify container id that you want to connect!" ; fi
 	C_USER=${C_USER:-root}  #default login in as root
 	
 	if [ ! -f "/var/vcap/data/garden-linux/depot/${C_ID}/run/wshd.pid" ]; then usage "$C_TYPE Container $C_ID is not running or exist!" ; fi
@@ -129,16 +137,18 @@ function garden_container() {
 	if [ $? != 0 ]; then usage "Fail get $C_TYPE container $C_ID pid, $C_PID" ; fi
 	
 	if command_exists nsattach; then
-		EXEC="nsattach --target $C_PID --mount --uts --ipc --net --pid --pty -- /bin/bash -c '/bin/su - $C_USER'"
+		EXEC="nsattach --target $C_PID --mount --uts --ipc --net --pid --pty -- /bin/bash -c"
+		if [ $RUN_MODE == "enter" ]; then EXEC="${EXEC} '/bin/su - $C_USER'" ; fi
 	elif command_exists nsenter; then
-		EXEC="nsenter --target $C_PID --mount --uts --ipc --net --pid -- /bin/bash -c '/bin/su - $C_USER'"
+		EXEC="nsenter --target $C_PID --mount --uts --ipc --net --pid -- /bin/bash -c"
+		if [ $RUN_MODE == "enter" ]; then EXEC="${EXEC} '/bin/su - $C_USER'" ; fi
 	else
 		connect_garden_container
 	fi
 }
 
 function docker_container() {
-	if [ -z "$C_ID" ]; then usage "You must specify containet id that you want to connect!" ; fi
+	if [ -z "$C_ID" ]; then usage "You must specify container id that you want to connect!" ; fi
 	C_USER=${C_USER:-root}  #default login in as root
 	
 	if command_exists docker; then
@@ -154,19 +164,42 @@ function docker_container() {
 	if [ "$C_PID" == 0 ]; then usage "$C_TYPE container $C_ID is not running" ; fi
 	
 	if command_exists nsattach; then
-		EXEC="nsattach --target $C_PID --mount --uts --ipc --net --pid --pty -- /bin/bash -c '/bin/su - $C_USER'"
+		EXEC="nsattach --target $C_PID --mount --uts --ipc --net --pid --pty -- /bin/bash -c"
+		if [ $RUN_MODE == "enter" ]; then EXEC="${EXEC} '/bin/su - $C_USER'" ; fi
 	elif command_exists nsenter; then
-		EXEC="nsenter --target $C_PID --mount --uts --ipc --net --pid -- /bin/bash -c '/bin/su - $C_USER'"
+		EXEC="nsenter --target $C_PID --mount --uts --ipc --net --pid -- /bin/bash -c"
+		if [ $RUN_MODE == "enter" ]; then EXEC="${EXEC} '/bin/su - $C_USER'" ; fi
 	else
 		connect_docker_container
 	fi
 }
 
+function get_container_exec() {
+	if [ ${#C_COMMANDS[@]} -gt 0 ]; then RUN_MODE="command" ; fi
+
+	case "$C_TYPE" in
+		garden)
+			garden_container ;;
+		docker)
+			docker_container ;;
+		*) usage "Dont support container type '$C_TYPE'" ;;
+	esac
+}
+
 function enter_container() {
 	if [ -n "$EXEC" ]; then
-		welcome
-		$shell -c "$C_SUDO $EXEC"
-		bye
+		if [ $RUN_MODE == "enter" ]; then
+			welcome
+			$shell -c "$C_SUDO $EXEC"
+			bye
+		elif [ $RUN_MODE == "command" ]; then
+			for command in "${C_COMMANDS[@]}"; do
+				echo -e "${BBlue}In $C_TYPE container $C_ID,Run '${command}'${NC}"
+				$shell -c "$C_SUDO $EXEC '${command}'"
+			done
+		else
+			usage "Unknown RUN_MODE : $RUN_MODE"
+		fi
 	fi
 }
 
@@ -181,7 +214,7 @@ function check_usage() {
 		fi
 	fi
 
-	case "$1" in
+	case '$1' in
 		-h|--help)
 			usage ;;
 		*)
@@ -190,56 +223,63 @@ function check_usage() {
 	esac
 }
 
-check_usage $@
+function get_args() {
+	echo -ne "${BRed}"
+	#GETOPT_FROMAT=`getopt -o t:i:u:d:e: --long type:,id:,user:,dir:,env: -n 'container-enter'  -- "$@"`
+	GETOPT_FROMAT=`getopt -o t:i:u:c: --long type:,id:,user:,command: -n 'container-container'  -- "$@"`
+	if [ $? != 0 ] ; then GETOPT_ERROR="true" ; fi
+	echo -ne "${NC}"
+	if [ -n "$GETOPT_ERROR" ] ; then usage ; fi
 
-echo -ne "${BRed}"
-#GETOPT_FROMAT=`getopt -o t:i:u:d:e: --long type:,id:,user:,dir:,env: -n 'ssh-container'  -- "$@"`
-GETOPT_FROMAT=`getopt -o t:i:u: --long type:,id:,user: -n 'ssh-container'  -- "$@"`
-if [ $? != 0 ] ; then GETOPT_ERROR="true" ; fi
-echo -ne "${NC}"
-if [ -n "$GETOPT_ERROR" ] ; then usage ; fi
+	eval set -- "$GETOPT_FROMAT"
+	while true ; do
+		case "$1" in
+			-t|--type) 
+				if [ -n "$C_TYPE" ]; then usage "duplicate -t or --type,'$1 $2'" ; fi
+				C_TYPE=$2 ; shift 2 ;;
+			-i|--id)
+				if [ -n "$C_ID" ]; then usage "duplicate -i or --id '$1 $2'" ; fi 
+				C_ID=$2 ; shift 2 ;;
+			-u|--user)
+				if [ -n "$C_USER" ]; then usage "duplicate -u or --user '$1 $2'" ; fi
+				C_USER=$2 ; shift 2 ;;
+			-d|--dir)
+				if [ -n "$C_DIR" ]; then usage "duplicate -d or --dir '$1 $2'" ; fi
+				C_DIR=$2 ; shift 2 ;;
+			-e|--env)
+				case "$2" in
+					*=*)
+	#					KEY="${2%%=*}" ; VALUE="${2#*=}" ;
+						C_ENVS[$[C_ENV_IDX++]]="$2"
+						shift 2 ;;
+					*) echo -e "${BRed}Warning!!! Invalid $1 --> '$2' ${NC}" ; shift 2 ;;
+				esac ;;
+			-c|--command)
+				C_COMMANDS[$[C_COMAND_IDX++]]="$2" ; shift 2 ;;
+			--) shift ; break ;;
+			*) usage "getopt Internal error!" ;;
+		esac
+	done
 
-eval set -- "$GETOPT_FROMAT"
-while true ; do
-	case "$1" in
-		-t|--type) 
-			if [ -n "$C_TYPE" ]; then usage "duplicate -t or --type,'$1 $2'" ; fi
-			C_TYPE=$2 ; shift 2 ;;
-		-i|--id)
-			if [ -n "$C_ID" ]; then usage "duplicate -i or --id '$1 $2'" ; fi 
-			C_ID=$2 ; shift 2 ;;
-		-u|--user)
-			if [ -n "$C_USER" ]; then usage "duplicate -u or --user '$1 $2'" ; fi
-			C_USER=$2 ; shift 2 ;;
-		-d|--dir)
-			if [ -n "$C_DIR" ]; then usage "duplicate -d or --dir '$1 $2'" ; fi
-			C_DIR=$2 ; shift 2 ;;
-		-e|--env)
-			case "$2" in
-				*=*)
-#					KEY="${2%%=*}" ; VALUE="${2#*=}" ;
-					C_ENVS[$[C_ENV_IDX++]]="$2"
-					shift 2 ;;
-				*) echo -e "${BRed}Warning!!! Invalid $1 --> '$2' ${NC}" ; shift 2 ;;
-			esac ;;
-		--) shift ; break ;;
-		*) usage "getopt Internal error!" ;;
-	esac
-done
-
-for arg do
-	echo -e "${BRed}Warning!!! Invalid argument --> '$arg' ${NC}"
-done
+	for arg do
+		echo -e "${BRed}Warning!!! Invalid argument --> '$arg' ${NC}"
+	done
+}
 
 
-case "$C_TYPE" in
-	garden)
-		garden_container ;;
-	docker)
-		docker_container ;;
-	*) usage "Dont support container type '$C_TYPE'" ;;
-esac
+function main() {
+	# check usage
+	check_usage "$@"
+	
+	# get input arguments
+	get_args "$@"
+	
+	# get container execute command
+	get_container_exec
+	
+	# enter container or run command
+	enter_container
+}
 
-enter_container
+main "$@"
 
-exit 0
