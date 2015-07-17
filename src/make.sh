@@ -9,6 +9,7 @@ SRC_DIR="$WORK_DIR"
 	rm -rf importenv > /dev/null 2>&1
 #	make LDFLAGS=-static CFLAGS=-Wall importenv 
 #	gcc -s -static -o importenv -xc importenv.c
+	if [ $? != 0 ]; then exit 1 ; fi
 	chmod a+x $SRC_DIR/importenv > /dev/null 2>&1
 } 
 
@@ -16,11 +17,16 @@ SRC_DIR="$WORK_DIR"
         cd $SRC_DIR     
 #	echo "compiling nsattach"
 	rm -rf nsattach > /dev/null 2>&1
-        make LDFLAGS=-static CFLAGS=-Wall nsattach
+	make LDFLAGS=-static CFLAGS=-Wall nsattach
 #	gcc -s -static -o nsattach -xc nsattach.c
+	if [ $? != 0 ]; then exit 1 ; fi
 	chmod a+x $SRC_DIR/nsattach > /dev/null 2>&1
 }
 
 [ -f $SRC_DIR/container-enter ] && {
 	chmod a+x $SRC_DIR/container-enter > /dev/null 2>&1
+}
+
+[ -f $SRC_DIR/container-mount-volumes ] && {
+        chmod a+x $SRC_DIR/container-mount-volumes > /dev/null 2>&1
 }
