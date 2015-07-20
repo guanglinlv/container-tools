@@ -13,12 +13,14 @@ Table of Contents
 - [Reference](#Reference)
 - [Licence](#Licence)
 
-#### Intro
+Intro
+-----
 
 - enter linux container like [garden](https://github.com/cloudfoundry-incubator/garden-linux) or [docker](https://github.com/docker/docker).
 - dynamic mount volumes for running container
 
-#### Prerequisites
+Prerequisites
+-----
 
 - [nsenter](https://www.kernel.org/pub/linux/utils/util-linux/)
 
@@ -40,7 +42,8 @@ Table of Contents
 	- create a garden container
 	- create a docker container
 
-#### container-enter
+container-enter
+-----
 
 - install [container-enter](http://code.huawei.com/l00177705/container-enter/blob/master/src/container-enter)
 
@@ -86,7 +89,8 @@ Table of Contents
     container-enter --type <CONTAINER-TYPE> --id <CONTAINER-ID> --command "ls -al"
     ```
 
-#### container-mount-volumes
+container-mount-volumes
+-----
 
 - how to mount local volumes
 
@@ -121,14 +125,17 @@ Table of Contents
 container-mount-volumes --type <CONTAINER-TYPE> --id <CONTAINER-ID> --command "mkdir -p /testnfs;mount -t nfs <NFS-HOST>:/home/nfs /testnfs"
     ```
 
-#### Reference
+Reference
+-----
+
 - [nsenter](https://www.kernel.org/pub/linux/utils/util-linux/),linux namespace utils
 - [nsattach](https://github.com/guanglinlv/nsattach),nsenter from util-linux with pseudo tty support
 - [docker-enter](https://github.com/jpetazzo/nsenter),nsenter with docker
 - [Attach a volume to a container while it is running](http://jpetazzo.github.io/2015/01/13/docker-mount-dynamic-volumes/)
 
 
-## Licence
+Licence
+-----
 
 Copyright (c) 2015, lvguanglin <guanglinlv@gmail.com>
 
