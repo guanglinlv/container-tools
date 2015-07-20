@@ -47,7 +47,7 @@ Prerequisites
 container-enter
 -----
 
-- install [container-enter](http://code.huawei.com/l00177705/container-enter/blob/master/src/container-enter)
+- install [container-enter](http://code.huawei.com/l00177705/container-tools/blob/master/src/container-enter)
 
 	install container-enter in the container VM.
 
@@ -98,7 +98,7 @@ container-mount-volumes
 
 - how to mount local volumes
 
-	we can use [container-mount-volumes](http://code.huawei.com/l00177705/container-enter/blob/master/src/container-mount-volumes) dynamic mount local volumes for running container.
+	we can use [container-mount-volumes](http://code.huawei.com/l00177705/container-tools/blob/master/src/container-mount-volumes) dynamic mount local volumes for running container.
 
 	- HELP
 
