@@ -5,13 +5,13 @@ Container-tools
 
 Table of Contents
 -----
-- [Name](#Name)
-- [Intro](#Intro)
-- [Prerequisites](#Prerequisites)
+- [Name](#name)
+- [Intro](#intro)
+- [Prerequisites](#prerequisites)
 - [container-enter](#container-enter)
 - [container-mount-volumes](#container-mount-volumes)
-- [Reference](#Reference)
-- [Licence](#Licence)
+- [Reference](#reference)
+- [Licence](#licence)
 
 Intro
 -----
